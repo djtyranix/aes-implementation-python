@@ -1,3 +1,4 @@
+from base64 import b64encode
 import socket,select, json
 from aes import AESEncryption
 from rsa import RSAEncryption
@@ -24,16 +25,27 @@ while True:
         else:
             data = sock.recv(2048)
             if data.startswith(b"#"):
-                users[data[1:].lower().decode('utf-8')]=connect
-                print("User " + data[1:].decode('utf-8') +" added.")
-                RSAEncryption.generate_key(data[1:].decode('utf-8'))
-                msg = "Your user detail saved as : "+str(data[1:].decode('utf-8'))
-                connect.send(msg.encode('utf-8'))
+                username = data[1:].lower().decode('utf-8')
+                users[username]=connect
+                print("User " + username +" added.")
+
+                RSAEncryption.generate_key(username)
+                enc_key, key = RSAEncryption.get_session_key(username)
+
+                msg = "Your user detail saved as : "+ username
+
+                iv, cipher = AESEncryption.encrypt_with_key(msg, key)
+                result = json.dumps({'iv': iv, 'cipher': cipher, 'rsa': b64encode(enc_key).decode('utf-8')})
+
+                connect.send(result.encode('utf-8'))
             elif data.startswith(b"@"):
-                user = data.rpartition(b':')[0]
-                msg = data.rpartition(b':')[2]
-                userIndex = user[1:].lower()
-                print(userIndex.decode('utf-8'))
-                print(msg.decode('utf-8'))
-                users[userIndex.decode('utf-8')].send(msg)
+                json_str = data.decode('utf-8')[1:]
+                b64 = json.loads(json_str)
+                userIndex = b64['username'][1:]
+                iv = b64['iv']
+                cipher = b64['cipher']
+                rsa = b64['rsa']
+                result = json.dumps({'iv': iv, 'cipher': cipher, 'rsa': rsa})
+                print(userIndex)
+                users[userIndex].send(result.encode('utf-8'))
 server_socket.close()
