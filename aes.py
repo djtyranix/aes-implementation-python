@@ -18,7 +18,7 @@ class AESEncryption:
         iv_decode = b64decode(iv)
         cipher = AES.new(ezkey, AES.MODE_CBC, iv_decode)
         plaintext = cipher.decrypt(cipher_bytes)
-        return unpad(plaintext, AES.block_size)
+        return unpad(plaintext, AES.block_size).decode('utf-8')
 
     def encrypt_with_key(msg, key):
         cipher = AES.new(key, AES.MODE_CBC)
@@ -32,4 +32,4 @@ class AESEncryption:
         iv_decode = b64decode(iv)
         cipher = AES.new(key, AES.MODE_CBC, iv_decode)
         plaintext = cipher.decrypt(cipher_bytes)
-        return unpad(plaintext, AES.block_size)
+        return unpad(plaintext, AES.block_size).decode('utf-8')
